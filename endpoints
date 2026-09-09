@@ -12,9 +12,9 @@
 |`/workshop/gptoss` | gptoss
 |`/workshop/qwen38` | qwen38
 
-## Administrator: ports
+## Administrator ports:
 
-Qwen 3.8: 10.57.11.105:28101 - c05
-Qwen 3.6: 10.57.11.104:28102 - c04
-Mistral: 10.57.11.104:28103 - c04
-GPT-OSS: 10.57.11.104:28104 - c04
+Qwen 3.8: 10.57.11.105:28101 | c05
+Qwen 3.6: 10.57.11.104:28102 | c04
+Mistral: 10.57.11.104:28103  | c04
+GPT-OSS: 10.57.11.104:28104  | c04
