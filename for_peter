@@ -1,6 +1,9 @@
-## base url we are using:
+## Endpoint for the models we are using:
 
-`https://teaching.healthtech.dtu.dk/workshop/v1`
+`https://teaching.healthtech.dtu.dk/workshop/qwen36`
+`https://teaching.healthtech.dtu.dk/workshop/qwen38`
+`https://teaching.healthtech.dtu.dk/workshop/mistral`
+`https://teaching.healthtech.dtu.dk/workshop/qptoss`
 
 ## Models proposed url names:
 
