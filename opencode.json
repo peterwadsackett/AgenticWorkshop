@@ -1,65 +1,50 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "dtu-gptoss/gptoss",
-  "small_model": "dtu-gptoss/gptoss",
+  "enabled_providers": [
+    "dtu"
+  ],
+  "model": "dtu/gptoss",
+  "small_model": "dtu/gptoss",
   "provider": {
-    "dtu-qwen36": {
+    "dtu": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "DTU Qwen 3.6",
-      "options": {
-        "baseURL": "https://teaching.healthtech.dtu.dk/workshop/qwen36"
-      },
+      "name": "DTU",
       "models": {
         "qwen36": {
           "name": "Qwen 3.6 35B-A3B",
+          "provider": {
+            "api": "https://teaching.healthtech.dtu.dk/workshop/qwen36"
+          },
           "limit": {
             "context": 16384,
             "output": 4096
           }
-        }
-      }
-    },
-    "dtu-qwen38": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "DTU Qwen 3.8",
-      "options": {
-        "baseURL": "https://teaching.healthtech.dtu.dk/workshop/qwen38"
-      },
-      "models": {
+        },
         "qwen38": {
           "name": "Qwen 3.8 27B FP8",
+          "provider": {
+            "api": "https://teaching.healthtech.dtu.dk/workshop/qwen38"
+          },
           "limit": {
             "context": 32768,
             "output": 4096
           }
-        }
-      }
-    },
-    "dtu-mistral": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "DTU Mistral",
-      "options": {
-        "baseURL": "https://teaching.healthtech.dtu.dk/workshop/mistral"
-      },
-      "models": {
+        },
         "mistral": {
           "name": "Mistral Nemo 12B",
+          "provider": {
+            "api": "https://teaching.healthtech.dtu.dk/workshop/mistral"
+          },
           "limit": {
             "context": 16384,
             "output": 4096
           }
-        }
-      }
-    },
-    "dtu-gptoss": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "DTU GPT-OSS",
-      "options": {
-        "baseURL": "https://teaching.healthtech.dtu.dk/workshop/gptoss"
-      },
-      "models": {
+        },
         "gptoss": {
           "name": "GPT-OSS 20B",
+          "provider": {
+            "api": "https://teaching.healthtech.dtu.dk/workshop/gptoss"
+          },
           "limit": {
             "context": 16384,
             "output": 4096

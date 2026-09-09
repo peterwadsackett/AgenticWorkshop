@@ -5,7 +5,7 @@ We run the language models on DTU's compute servers. Students use
 
 [Peter and Dimitrios](#1-peter-and-dimitrios--running-the-workshop) ·
 [Students](#2-students--connecting-with-opencode) ·
-[Download the student configuration](opencode.json)
+[Download the workshop ZIP](https://github.com/peterwadsackett/AgenticWorkshop/archive/refs/heads/main.zip)
 
 ## 1. Peter and Dimitrios — running the workshop
 
@@ -174,32 +174,57 @@ PYTHONPATH=/home/local/workshop envs/manage/bin/python -m unittest discover -s t
 You only need **OpenCode and the configuration below**. You do not need a
 cluster account, SSH, model downloads or server-start commands.
 
-### Option A: use the supplied JSON — recommended
+### Quick start — download, extract and open
 
-1. Install [OpenCode](https://opencode.ai) and create a folder for the exercises.
-2. Download [opencode.json](opencode.json). On GitHub, use **Download raw file**,
-   not a saved copy of the webpage.
-3. Put the file directly in your exercise folder, named exactly
-   `opencode.json`—not `opencode.json.txt`.
-4. Open **that same folder** in OpenCode Desktop. For the terminal version,
-   run `opencode` from that folder. Restart OpenCode if it was already open.
-5. Start a new chat and choose a DTU model from the model selector.
-   In the terminal version, `/models` opens the model list.
+1. Install [OpenCode](https://opencode.ai).
+2. Open [the workshop repository](https://github.com/peterwadsackett/AgenticWorkshop)
+   and choose **Code → Download ZIP**.
+3. Extract the ZIP and move the extracted folder wherever you want to work.
+   Its default name is `AgenticWorkshop-main`.
+4. In **OpenCode Desktop**, open that extracted folder as your project—the
+   folder containing both `README.md` and `opencode.json`, not its parent.
+   For the terminal version, run `opencode` from inside that folder.
+5. Start a new chat. Open the model selector and choose a model under **DTU**.
+   In the terminal version, type `/models`.
 
-The file adds all four models and their limits, with GPT-OSS selected by
-default. It also uses GPT-OSS for small background tasks such as chat titles.
-If you already have an `opencode.json`, ask an organiser to merge the
-settings instead of replacing your own configuration.
+**No JSON editing, manual merging, API key or Custom provider setup is needed.**
+Leave your existing global `opencode.jsonc`, `package.json` and
+`node_modules` alone. OpenCode combines the project configuration with your
+global settings automatically.
 
-**Does the JSON start the models?** It lets you select and use the models
-that Peter and Dimitrios have started. It does not power up the cluster
-models or grant server access. If a model is unavailable, ask an organiser.
+The workshop project shows one **DTU** group containing:
 
-For settings across all your projects, the file can instead be merged into
-`~/.config/opencode/opencode.json`. Project settings can override matching
-global settings. See [OpenCode configuration](https://opencode.ai/docs/config/#locations).
+| Model | Context | Maximum output |
+|---|---:|---:|
+| Qwen 3.6 35B-A3B | 16384 | 4096 |
+| Qwen 3.8 27B FP8 | 32768 | 4096 |
+| Mistral Nemo 12B | 16384 | 4096 |
+| GPT-OSS 20B | 16384 | 4096 |
 
-### Option B: enter the fields manually
+GPT-OSS is the default model and handles small background tasks such as chat
+titles. Only the DTU provider is enabled **inside this project**, so old
+workshop entries and other providers do not clutter the model list. Your
+global configuration is not changed.
+
+Keep exercise files in this folder. If you downloaded an earlier version,
+download and open a fresh copy for the new configuration; keep your existing
+exercise work. Fully quit and reopen OpenCode if it still shows the old list.
+
+**Does opening the folder start the models?** No. It connects to models that
+Peter and Dimitrios have already started. If a model is unavailable, ask an
+organiser. You do not need server access.
+
+See [OpenCode project configuration](https://opencode.ai/docs/config/#per-project).
+
+### Manual connection reference — optional
+
+<details>
+<summary>Connection fields for a separate project without the supplied JSON</summary>
+
+The ZIP method above is the workshop setup. These fields are only a fallback
+for connecting in another project. The form creates separate providers; it
+does not reproduce the single DTU group. Do not add these providers in the
+workshop project, where only `dtu` is enabled.
 
 Choose **Custom provider** and use the fields below. Create a separate
 provider for each model you want. The connection type is **OpenAI-compatible**.
@@ -268,10 +293,13 @@ See [OpenCode custom providers](https://opencode.ai/docs/providers/#custom-provi
 | Context limit, in JSON | `16384` |
 | Output limit, in JSON | `4096` |
 
+
+</details>
+
 ### Changing your context setting
 
 Only change context when an organiser tells you the server setting has changed.
-In `opencode.json`, find the model under `provider → provider ID → models → model ID`.
+In `opencode.json`, find the model under `provider → dtu → models → model ID`.
 For Mistral, the limits look like this:
 
 ```json
@@ -294,7 +322,8 @@ restart OpenCode. Increasing this number does not increase the server's capacity
 | DTU models are missing | Check that OpenCode opened the folder containing `opencode.json`, then restart it. |
 | Connection failed / 503 | Ask an organiser to check the model's start command. |
 | Invalid API key / 401 | The workshop does not currently require a key; check for old provider settings. |
-| Not found / 404 | Compare the Base URL and Model ID with the table for that model. |
+| Not found / 404 | Use a fresh workshop download; ask an organiser to check the URL if it persists. |
+| Old groups or Big Pickle still appear | Check that you opened the newly extracted folder, then fully quit and reopen OpenCode. |
 | Too many requests / 429 | Wait briefly and try again; the servers are shared. |
 | Context too long | Compact the conversation or start a new chat. |
 
