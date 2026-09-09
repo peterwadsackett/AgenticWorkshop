@@ -1,0 +1,21 @@
+## base url we are using:
+
+`https://teaching.healthtech.dtu.dk/workshop/v1`
+
+## Models proposed url names:
+
+|`/workshop/qwen36` | qwen36
+|`/workshop/mistral`| mistral
+|`/workshop/gptoss` | gptoss
+|`/workshop/qwen38` | qwen38
+
+## Administrator: ports
+
+| Service | Address | Access |
+|---|---|---|
+| Public HTTPS | `teaching.healthtech.dtu.dk:443` | Students |
+| Shared gateway | `10.57.11.104:28100`, HTTP | Administrator's proxy |
+| Qwen 3.6 | compute04 `127.0.0.1:28102`, HTTP | Local gateway |
+| Mistral Nemo | compute04 `127.0.0.1:28103`, HTTP | Local gateway |
+| GPT-OSS | compute04 `127.0.0.1:28104`, HTTP | Local gateway |
+| Qwen 3.8 | compute05 `10.57.11.105:28101`, HTTP | compute04 gateway
