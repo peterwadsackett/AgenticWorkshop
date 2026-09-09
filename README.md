@@ -1,315 +1,307 @@
-# Workshop LLMs — operator guide
+# Agentic Workshop
 
-**compute04 + compute05 · vLLM 0.19.0 · Updated 9 September 2026**
+We run the language models on DTU's compute servers. Students use
+**OpenCode** on their own computers to chat with the models and work on the exercises.
 
-We host the models; students use OpenCode on their own laptops.
-All server files stay inside `/home/local/workshop`.
+[Peter and Dimitrios](#1-peter-and-dimitrios--running-the-workshop) ·
+[Students](#2-students--connecting-with-opencode) ·
+[Download the student configuration](opencode.json)
 
-[Start & stop](#1-start-stop-and-status) · [Models & URLs](#2-models-and-urls) · [Context](#3-changing-context-size) · [OpenCode](#4-opencode-setup) · [Checks](#5-health-logs-and-troubleshooting) · [Review guide](#6-what-runs-where)
+## 1. Peter and Dimitrios — running the workshop
 
-> **Important:** compute04 hosts the shared gateway for every model.
-> Killing compute04 also makes Qwen 3.8's public URL unavailable, even when
-> Qwen 3.8 is still running on compute05. Node-specific commands do not
-> automatically start or stop the other node.
-
-## 1. Start, stop and status
-
-### Connect
-
-From your laptop, connect to either node through the login host:
+### Connect to the server
 
 ```bash
 ssh -J dimkan@login.healthtech.dtu.dk dimkan@compute04
 cd /home/local/workshop
 ```
 
-Use compute05 instead to work there. The login host is only an SSH jump;
-do not run the models on it. Commands below run on a compute node.
+You can connect to compute05 instead. Run the commands below on a compute
+node, not the login node. The folder belongs to `dimkan`; Peter needs access
+through that account or administrator-arranged permissions.
 
-The workshop belongs to `dimkan` and has owner-only permissions.
-An administrator using another account must arrange access or run as the
-workshop owner. Cross-node commands use noninteractive SSH as `dimkan`;
-they do not disable SSH host-key checking.
+### Start, stop and check the models
 
-### Command reference — works from either compute node
+These commands work from either compute node:
 
-| What to control | Start | Kill / stop | Status |
+| Scope | Start | Stop | Check status |
 |---|---|---|---|
-| **Only compute04** | `bash bin/llm start compute04` | `bash bin/llm kill compute04` | `bash bin/llm status compute04` |
-| **Only compute05** | `bash bin/llm start compute05` | `bash bin/llm kill compute05` | `bash bin/llm status compute05` |
-| **Both nodes** | `bash bin/llm start all` | `bash bin/llm kill all` | `bash bin/llm status all` |
+| compute04 models | `bash bin/llm start compute04` | `bash bin/llm kill compute04` | `bash bin/llm status compute04` |
+| compute05 model | `bash bin/llm start compute05` | `bash bin/llm kill compute05` | `bash bin/llm status compute05` |
+| Everything | `bash bin/llm start all` | `bash bin/llm kill all` | `bash bin/llm status all` |
 
-`kill` and `stop` mean the same thing: gracefully stop verified workshop
-processes. They do not reboot the computer, force-kill unrelated jobs or touch Atlas.
+**Before the workshop, run `bash bin/llm start all` and wait for READY.**
 
-To restart a node, run its kill command, wait for successful completion, then
-run its start command. Do not start again if stopping reports an error.
+Start commands also start any missing connection services. Already-running
+models are kept. If a start fails, read the error before trying again.
+`kill` and `stop` mean the same thing: stop our workshop processes safely.
+To restart, stop first, wait for success, then start.
 
-For both nodes, stop order is compute05 → compute04; start order is
-compute04 → compute05. An SSH preflight failure changes neither node.
-Later failures are reported; always inspect status after an incomplete operation.
+> The shared connection service, called the **gateway**, runs on compute04.
+> Stopping compute04 disconnects every model, including Qwen 3.8.
+> Starting compute05 automatically starts that gateway if needed, but does
+> not start compute04's other models.
 
-### One model, local-only control, and previews
+No tmux is needed, and closing SSH leaves the models running. After a server
+reboot, start them again. Only use this setup during the approved workshop
+reservation; do not bypass the checks for occupied GPUs.
 
-Individual-model commands must run on the model's own node:
+For just one model, run its command on the node listed below:
 
 ```bash
-# On compute04; replace mistral with qwen36 or gptoss if needed
-bash bin/llm stop mistral
+# Example on compute04
 bash bin/llm start mistral
+bash bin/llm stop mistral
 
-# On compute05
-bash bin/llm stop qwen38
+# Example on compute05
 bash bin/llm start qwen38
+bash bin/llm stop qwen38
 ```
 
-The matching model endpoint is included automatically.
+To preview a command without doing anything, add `--dry-run`.
+For more options, run `bash bin/llm --help`.
 
-```bash
-# Preview without changing anything
-bash bin/llm kill compute04 --dry-run
-bash bin/llm start all --dry-run
+### Model settings
 
-# Affect only the node you are currently on
-bash bin/llm stop all --local
-
-# Show all available options
-bash bin/llm --help
-```
-
-No tmux is needed. Processes run in the background after SSH closes, but do
-**not** restart automatically after reboot. Use direct execution only during
-the administrator-approved workshop reservation. GPU/Slurm allocation checks
-remain enabled. A started PID is not proof that model loading has finished.
-
-## 2. Models and URLs
-
-| Model ID | Model | Node / GPUs | Default context | Server output cap |
+| Model ID | Node | GPUs | Default context | Server output cap |
 |---|---|---|---:|---:|
-| `qwen36` | Qwen 3.6 35B-A3B | compute04 / 0, 1 | 16384 | 4096 |
-| `mistral` | Mistral Nemo 12B | compute04 / 2 | 16384 | 4096 |
-| `gptoss` | GPT-OSS 20B | compute04 / 3 | 16384 | 8192 |
-| `qwen38` | Qwen 3.8 27B FP8 | compute05 / 0, 1 | 32768 | 8192 |
+| `qwen36` | compute04 | 0, 1 | 16384 | 4096 |
+| `qwen38` | compute05 | 0, 1 | 32768 | 8192 |
+| `mistral` | compute04 | 2 | 16384 | 4096 |
+| `gptoss` | compute04 | 3 | 16384 | 8192 |
 
-Use these base URLs exactly; **do not append `/v1`**:
+**Context** is the total space for the conversation and answer, measured in
+tokens. It includes previous messages, instructions and tool results.
+**Output** is the maximum length of the model's answer, including reasoning.
 
-| Model ID | OpenCode base URL | Administrator's HTTP upstream |
-|---|---|---|
-| `qwen36` | `https://teaching.healthtech.dtu.dk/workshop/qwen36` | `10.57.11.104:28102` |
-| `mistral` | `https://teaching.healthtech.dtu.dk/workshop/mistral` | `10.57.11.104:28103` |
-| `gptoss` | `https://teaching.healthtech.dtu.dk/workshop/gptoss` | `10.57.11.104:28104` |
-| `qwen38` | `https://teaching.healthtech.dtu.dk/workshop/qwen38` | `10.57.11.105:28101` |
-
-The spelling is **gptoss**, not qptoss. HTTPS certificates are handled by the
-administrator's proxy. Student API-key and extra-header fields are empty during
-keyless testing. Anyone who can reach these public routes can use them;
-the administrator should restrict exposure to the intended audience.
-
-## 3. Changing context size
-
-**Context is the total budget for input plus output.** Input includes chat
-history, system instructions, tool definitions and tool results—not just the
-latest message.
-
-### Change one launch
-
-Stop the model first; starting an already-running model does not change it.
+To change a model's context, stop it first. For example, on compute04:
 
 ```bash
-# Example: test a 32K Mistral context, on compute04
 bash bin/llm stop mistral
 bash bin/llm start mistral --context 32768
 ```
 
-Wait until it is ready, then update OpenCode's context setting to match.
-If it fails to load, stop it and return to the default:
+- This changes one launch only. To save a default, edit that model's
+  `context` in `config/models.json` on its node, then stop/start it.
+- Update the matching `limit.context` in the student JSON before sharing it.
+  Students must restart OpenCode after replacing their configuration.
+- Larger contexts need more GPU memory and must be tested. The launcher
+  permits up to 65536 for the Qwen models and 32768 for Mistral/GPT-OSS;
+  those are allowed settings, not guaranteed working capacities.
+- To return Mistral to its default, stop it and start it with
+  `--context 16384`. An already-running model ignores a new start request.
+- Keep student output at 4096. The server may reduce it further to fit the
+  conversation. If the conversation is too long, compact it or start a new chat.
 
-```bash
-bash bin/llm stop mistral
-bash bin/llm start mistral --context 16384
-```
+The output caps are set in compute04's `app/gateway.py`, separately from
+server context. Changing that code requires tests and a gateway restart.
 
-| Model | Default | Current launcher upper bound |
-|---|---:|---:|
-| qwen36 | 16384 | 65536 |
-| mistral | 16384 | 32768 |
-| gptoss | 16384 | 32768 |
-| qwen38 | 32768 | 65536 |
+### Check connections and investigate errors
 
-These upper bounds are configured guardrails, **not tested capacity guarantees**.
-Larger contexts use more GPU memory and can reduce concurrency.
-The launcher minimum is 2048. `--context` applies to one local model, not to
-`all`, `compute04`, `compute05`, the gateway or an endpoint.
+The launcher waits for the model and its public connection to become ready.
+A readiness timeout leaves started processes running so you can inspect them.
 
-### Make a default permanent
-
-On the node hosting that model, edit `config/models.json`:
-
-- `context`: the default used at the next normal start.
-- `max_context`: the launcher's allowed upper bound, not a GPU-capacity promise.
-
-Preserve the other profile fields. Stop and start that model to apply the
-change. A command-line `--context` override is not saved to this file.
-
-### Output budgets and sampling
-
-The client should request 4096 output tokens by default. The gateway enforces
-the model caps in the table, even if a client requests more. After a
-pre-generation context rejection, it can count the input and retry once with
-a smaller output allowance. If input itself is too long, compact the chat or
-start a new one; the gateway does not silently truncate history.
-
-Output policy lives in compute04's `app/gateway.py`, in the `max_tokens` /
-`max_completion_tokens` handling. Changing that code requires tests and a
-gateway restart; it is separate from a model's server context.
-
-Temperature is a request-time sampling setting, not a context setting.
-The `temperature` entries in `config/models.json` are not applied by the
-current launcher; editing them alone does not change client requests.
-
-## 4. OpenCode setup
-
-Create one custom OpenAI-compatible provider per model, using its base URL and
-exact model ID above. Leave the API key empty. Use
-`@ai-sdk/openai-compatible` for JSON configuration.
-
-Example project `opencode.json` for Mistral at its **default** context:
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "provider": {
-    "dtu-mistral": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "DTU Mistral",
-      "options": {
-        "baseURL": "https://teaching.healthtech.dtu.dk/workshop/mistral"
-      },
-      "models": {
-        "mistral": {
-          "name": "Mistral Nemo 12B",
-          "limit": { "context": 16384, "output": 4096 }
-        }
-      }
-    }
-  },
-  "permission": { "edit": "ask", "bash": "ask" }
-}
-```
-
-Edit `provider → dtu-mistral → models → mistral → limit` to match the
-running server. This example configures only Mistral; merge it into an existing
-configuration rather than overwriting other providers.
-See the [OpenCode custom-provider documentation](https://opencode.ai/docs/providers/#custom-provider).
-
-For user-wide settings, use `~/.config/opencode/opencode.json` on the
-student's laptop; project settings can override matching global settings.
-Restart OpenCode after editing.
-See [configuration locations](https://opencode.ai/docs/config/#locations).
-
-Use a dedicated exercise folder and review proposed edits/commands.
-Switching models in an existing chat can retain its conversation and tool
-history; use a fresh chat for clean model comparisons.
-
-## 5. Health, logs and troubleshooting
-
-### Check readiness
-
-Run from a machine with access to the teaching URL. Replace `mistral` with
-the desired model ID:
+From a computer with access to the teaching URL:
 
 ```bash
 curl --fail --max-time 15 https://teaching.healthtech.dtu.dk/workshop/mistral/health
 curl --fail --max-time 15 https://teaching.healthtech.dtu.dk/workshop/mistral/models
 ```
 
-Wait for `available: true`. The model listing reports the live
-`max_model_len`; use that to confirm a context change.
+Replace `mistral` with another model ID. Look for `available: true`;
+`max_model_len` shows the running context size.
 
-On the relevant compute node:
+On the model's node:
 
 ```bash
-cd /home/local/workshop
 bash bin/llm status all
 tail -n 60 logs/direct-mistral.log
-nvidia-smi
 ```
 
-For Qwen 3.8 use compute05's `logs/direct-qwen38.log`; gateway errors are
-in compute04's `logs/direct-gateway.log`. `logs/requests.jsonl` records
-request status/timing without storing prompts or completions.
+Use `direct-qwen36.log`, `direct-qwen38.log` or `direct-gptoss.log` for
+the other models. Connection-service errors are in compute04's
+`logs/direct-gateway.log`. Re-running the model's start command restores
+missing required services without reloading an already-running model.
 
-| Problem | Check / action |
-|---|---|
-| Process started but API unavailable | Model may still be loading; inspect logs and `/health`. |
-| Qwen 3.8 runs but its URL fails | Check compute04's shared gateway. |
-| HTTP 404 | Check base URL/model spelling; GPT-OSS uses `gptoss`. |
-| HTTP 401 | Unexpected in keyless mode; check route/access policy. |
-| HTTP 429 | Shared rate/concurrency limit; retry with backoff. |
-| HTTP 503 / unavailable | Check model and gateway status; inspect logs. |
-| Context error | Compact/start a fresh chat; align client/server limits. |
-| GPUs occupied or Slurm allocation present | Do not bypass the guard or kill others' jobs; ask the administrator. |
-| SSH preflight failed | Check inter-node access; use an explicit local node only if that is what you intend. |
-
-### Restart only the gateway
-
-On compute04:
+To restart only the gateway, on compute04:
 
 ```bash
 bash bin/llm stop gateway
 bash bin/llm start gateway
 ```
 
-This leaves GPU models loaded but briefly interrupts API access for all models.
+This briefly interrupts all connections but leaves the models loaded.
 
-### Run tests without changing model state
+### Files and ports we maintain
 
-On compute04:
+| Location on the cluster | What it is for |
+|---|---|
+| `bin/llm.py` | Starting, stopping and checking services |
+| `app/` | Connection handling and model requests |
+| `config/models.json` | Model settings and server addresses |
+| `config/model-endpoints.json`, `config/reverse-proxy.json` | Public-connection settings |
+| `config/access-policy.json` | Whether students need an API key |
+| `models/`, `envs/`, `runtime/` | Models and installed software; leave these in place |
+| `logs/`, `run/`, `cache/`, `tmp/` | Logs and working files; do not clear while running |
+
+We use **vLLM 0.19.0** to run the models. Peter's HTTPS server forwards
+each model URL to the corresponding HTTP address:
+
+| Model | Internal address |
+|---|---|
+| qwen36 | `10.57.11.104:28102` |
+| qwen38 | `10.57.11.105:28101` |
+| mistral | `10.57.11.104:28103` |
+| gptoss | `10.57.11.104:28104` |
+
+The shared gateway is on compute04 port 28100. It must reach Qwen 3.8's
+private model service on compute05 port 28201. These are not student URLs.
+
+Student API keys are currently disabled. Keep the teaching URLs restricted
+to the intended audience. Internal credentials are still required; do not
+publish server `config/`, keys or logs. The student `opencode.json`
+contains no credentials and is intended for sharing.
+
+To check code changes on compute04:
 
 ```bash
-cd /home/local/workshop
 source bin/workshop-env.sh
 PYTHONPATH=/home/local/workshop envs/manage/bin/python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-On compute05, run the current launcher tests with
-`PYTHONPATH=/home/local/workshop envs/manage/bin/python -m unittest discover -s tests -p test_launcher.py`
-after sourcing `bin/workshop-env.sh`. Its older gateway tests are not the
-current compute04 gateway suite.
+## 2. Students — connecting with OpenCode
 
-## 6. What runs where
+You only need **OpenCode and the configuration below**. You do not need a
+cluster account, SSH, model downloads or server-start commands.
 
-```text
-Student's OpenCode
-  → DTU HTTPS proxy
-  → per-model endpoint on compute04 or compute05
-  → shared gateway on compute04
-  → vLLM backend on the model's node
+### Option A: use the supplied JSON — recommended
+
+1. Install [OpenCode](https://opencode.ai) and create a folder for the exercises.
+2. Download [opencode.json](opencode.json). On GitHub, use **Download raw file**,
+   not a saved copy of the webpage.
+3. Put the file directly in your exercise folder, named exactly
+   `opencode.json`—not `opencode.json.txt`.
+4. Open **that same folder** in OpenCode Desktop. For the terminal version,
+   run `opencode` from that folder. Restart OpenCode if it was already open.
+5. Start a new chat and choose a DTU model from the model selector.
+   In the terminal version, `/models` opens the model list.
+
+The file adds all four models and their limits, with GPT-OSS selected by
+default. It also uses GPT-OSS for small background tasks such as chat titles.
+If you already have an `opencode.json`, ask an organiser to merge the
+settings instead of replacing your own configuration.
+
+**Does the JSON start the models?** It lets you select and use the models
+that Peter and Dimitrios have started. It does not power up the cluster
+models or grant server access. If a model is unavailable, ask an organiser.
+
+For settings across all your projects, the file can instead be merged into
+`~/.config/opencode/opencode.json`. Project settings can override matching
+global settings. See [OpenCode configuration](https://opencode.ai/docs/config/#locations).
+
+### Option B: enter the fields manually
+
+Choose **Custom provider** and use the fields below. Create a separate
+provider for each model you want. The connection type is **OpenAI-compatible**.
+
+Use each Base URL exactly as shown, with no additional path at the end.
+After entering the provider and model fields, select **Submit**.
+
+The connection form may not offer context/output fields. If it does not,
+set those limits in JSON using the instructions after the tables.
+The supplied JSON already contains them.
+See [OpenCode custom providers](https://opencode.ai/docs/providers/#custom-provider).
+
+#### Qwen 3.6 35B-A3B
+
+| Field in OpenCode | What to enter |
+|---|---|
+| Provider ID | `dtu-qwen36` |
+| Display name | `DTU Qwen 3.6` |
+| Base URL | `https://teaching.healthtech.dtu.dk/workshop/qwen36` |
+| API key | Leave empty |
+| Models → Model ID | `qwen36` |
+| Models → Display Name | `Qwen 3.6 35B-A3B` |
+| Headers | Leave empty; do not add a header |
+| Context limit, in JSON | `16384` |
+| Output limit, in JSON | `4096` |
+
+#### Qwen 3.8 27B FP8
+
+| Field in OpenCode | What to enter |
+|---|---|
+| Provider ID | `dtu-qwen38` |
+| Display name | `DTU Qwen 3.8` |
+| Base URL | `https://teaching.healthtech.dtu.dk/workshop/qwen38` |
+| API key | Leave empty |
+| Models → Model ID | `qwen38` |
+| Models → Display Name | `Qwen 3.8 27B FP8` |
+| Headers | Leave empty; do not add a header |
+| Context limit, in JSON | `32768` |
+| Output limit, in JSON | `4096` |
+
+#### Mistral Nemo 12B
+
+| Field in OpenCode | What to enter |
+|---|---|
+| Provider ID | `dtu-mistral` |
+| Display name | `DTU Mistral` |
+| Base URL | `https://teaching.healthtech.dtu.dk/workshop/mistral` |
+| API key | Leave empty |
+| Models → Model ID | `mistral` |
+| Models → Display Name | `Mistral Nemo 12B` |
+| Headers | Leave empty; do not add a header |
+| Context limit, in JSON | `16384` |
+| Output limit, in JSON | `4096` |
+
+#### GPT-OSS 20B
+
+| Field in OpenCode | What to enter |
+|---|---|
+| Provider ID | `dtu-gptoss` |
+| Display name | `DTU GPT-OSS` |
+| Base URL | `https://teaching.healthtech.dtu.dk/workshop/gptoss` |
+| API key | Leave empty |
+| Models → Model ID | `gptoss` |
+| Models → Display Name | `GPT-OSS 20B` |
+| Headers | Leave empty; do not add a header |
+| Context limit, in JSON | `16384` |
+| Output limit, in JSON | `4096` |
+
+### Changing your context setting
+
+Only change context when an organiser tells you the server setting has changed.
+In `opencode.json`, find the model under `provider → provider ID → models → model ID`.
+For Mistral, the limits look like this:
+
+```json
+{
+  "name": "Mistral Nemo 12B",
+  "limit": {
+    "context": 16384,
+    "output": 4096
+  }
+}
 ```
 
-OpenCode executes permitted tools on the student's laptop.
-The model server supplies responses; it does not execute those shell commands.
+This is one model entry, not a complete OpenCode configuration. Save the file and
+restart OpenCode. Increasing this number does not increase the server's capacity.
 
-| File / folder | Purpose |
+### If something does not work
+
+| What you see | What to do |
 |---|---|
-| `bin/llm`, `bin/llm.py` | Normal operator entry point, node routing and verified process control |
-| `bin/workshop-env.sh` | Keeps Python, temporary files and caches inside workshop |
-| `app/model_endpoint.py` | Model-specific URL handling and source restrictions |
-| `app/pilot_proxy.py` | Active compute04 gateway entry point; historical filename |
-| `app/gateway.py` | Shared routing, credentials, quotas, output limits and streaming |
-| `app/request_compat.py` | Context-error handling and Mistral history conversion |
-| `config/models.json` | Model profiles, context defaults, backend addresses and vLLM arguments |
-| `config/model-endpoints.json`, `config/reverse-proxy.json` | Endpoint and proxy rules |
-| `config/access-policy.json` | Student-key requirement; currently false on compute04 |
-| `models/`, `envs/`, `runtime/` | Weights, installed packages and Python; do not move/delete |
-| `run/`, `logs/`, `cache/`, `tmp/`, `data/` | Process state, diagnostics and runtime data |
-| `tests/`, `manifests/` | Regression tests, pinned downloads and version records |
+| DTU models are missing | Check that OpenCode opened the folder containing `opencode.json`, then restart it. |
+| Connection failed / 503 | Ask an organiser to check the model's start command. |
+| Invalid API key / 401 | The workshop does not currently require a key; check for old provider settings. |
+| Not found / 404 | Compare the Base URL and Model ID with the table for that model. |
+| Too many requests / 429 | Wait briefly and try again; the servers are shared. |
+| Context too long | Compact the conversation or start a new chat. |
 
-Compute04 is the canonical gateway. Similarly named old files on compute05
-are not extra active gateways; use this launcher, not old pilot/workshopctl scripts.
+Send Peter or Dimitrios the **model name and exact error message** if you need
+help. Do not disable certificate checks or change server settings yourself.
 
-Private backend keys remain necessary despite student keyless mode.
-Do not publish `config/`, keys, certificates, logs, model files or environments.
-The proxy-source allowlist includes `10.57.3.3` and the two compute nodes.
-Internal traffic needs compute05 → compute04 TCP 28100 and
-compute04 → compute05 TCP 28201. Firewall/certificate changes belong to the administrator.
+OpenCode may ask to edit files or run commands **on your computer**. Review
+those requests before allowing them. Work in the exercise folder.
+When comparing models, start a fresh chat: switching models within a chat
+can keep the earlier conversation and tool results.
