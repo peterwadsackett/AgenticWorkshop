@@ -11,11 +11,7 @@
 
 ## Administrator: ports
 
-| Service | Address | Access |
-|---|---|---|
-| Public HTTPS | `teaching.healthtech.dtu.dk:443` | Students |
-| Shared gateway | `10.57.11.104:28100`, HTTP | Administrator's proxy |
-| Qwen 3.6 | compute04 `127.0.0.1:28102`, HTTP | Local gateway |
-| Mistral Nemo | compute04 `127.0.0.1:28103`, HTTP | Local gateway |
-| GPT-OSS | compute04 `127.0.0.1:28104`, HTTP | Local gateway |
-| Qwen 3.8 | compute05 `10.57.11.105:28101`, HTTP | compute04 gateway
+Qwen 3.8: 10.57.11.105:28101 - c05
+Qwen 3.6: 10.57.11.104:28102 - c04
+Mistral: 10.57.11.104:28103 - c04
+GPT-OSS: 10.57.11.104:28104 - c04
