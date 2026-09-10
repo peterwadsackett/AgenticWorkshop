@@ -1,8 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "enabled_providers": [
-    "dtu"
-  ],
   "model": "dtu/gptoss",
   "small_model": "dtu/gptoss",
   "provider": {

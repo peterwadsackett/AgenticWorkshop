@@ -213,9 +213,10 @@ The workshop project shows one **DTU** group containing:
 | GPT-OSS 20B | 16384 | 4096 |
 
 GPT-OSS is the default model and handles small background tasks such as chat
-titles. Only the DTU provider is enabled **inside this project**, so old
-workshop entries and other providers do not clutter the model list. Your
-global configuration is not changed.
+titles. The DTU group is added alongside OpenCode's available free models
+and your other configured providers. This file does not restrict the provider
+list or change your global configuration. Other providers may require their
+own sign-in or API key.
 
 Keep exercise files in this folder. If you downloaded an earlier version,
 download and open a fresh copy for the new configuration; keep your existing
@@ -234,8 +235,8 @@ See [OpenCode project configuration](https://opencode.ai/docs/config/#per-projec
 
 The ZIP method above is the workshop setup. These fields are only a fallback
 for connecting in another project. The form creates separate providers; it
-does not reproduce the single DTU group. Do not add these providers in the
-workshop project, where only `dtu` is enabled.
+does not reproduce the single DTU group. There is no need to add these
+separate providers when you already use the supplied workshop JSON.
 
 Choose **Custom provider** and use the fields below. Create a separate
 provider for each model you want. The connection type is **OpenAI-compatible**.
@@ -334,7 +335,7 @@ restart OpenCode. Increasing this number does not increase the server's capacity
 | Connection failed / 503 | Ask an organiser to check the model's start command. |
 | Invalid API key / 401 | The workshop does not currently require a key; check for old provider settings. |
 | Not found / 404 | Use a fresh workshop download; ask an organiser to check the URL if it persists. |
-| Old groups or Big Pickle still appear | Check that you opened the newly extracted folder, then fully quit and reopen OpenCode. |
+| Free models or other providers are missing | Check for `enabled_providers` or `disabled_providers` restrictions in your other project/global settings. The supplied workshop JSON does not hide them. |
 | Too many requests / 429 | Wait briefly and try again; the servers are shared. |
 | Context too long | Compact the conversation or start a new chat. |
 
