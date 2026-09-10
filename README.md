@@ -30,7 +30,7 @@ These commands work from either compute node:
 | compute05 model | `bash bin/llm start compute05` | `bash bin/llm kill compute05` | `bash bin/llm status compute05` |
 | Everything | `bash bin/llm start all` | `bash bin/llm kill all` | `bash bin/llm status all` |
 
-**Before the workshop, run `bash bin/llm start all` and wait for READY.**
+**Before the workshop, run `bash bin/llm start all` and check the readiness summary for both nodes.**
 
 Start commands also start any missing connection services. Already-running
 models are kept. If a start fails, read the error before trying again.
@@ -98,8 +98,19 @@ server context. Changing that code requires tests and a gateway restart.
 
 ### Check connections and investigate errors
 
-The launcher waits for the model and its public connection to become ready.
-A readiness timeout leaves started processes running so you can inspect them.
+The launcher waits up to five minutes per node. It checks the gateway and
+model health, then sends a tiny test message through each model's public URL.
+Each model is marked **READY** only after it returns answer text. Models are
+checked independently, so a slow or failed model does not hide the others.
+
+The final summary lists every requested model as **READY** or **NOT READY**,
+with a reason for any failure. A failure or timeout makes the command report
+an incomplete startup; it does not stop the models that are running. Check
+both nodes: compute04 being ready does not mean compute05 also started.
+
+To repeat the checks, run the same start command again. Already-running
+models are not reloaded. This tests basic replies, not every possible
+OpenCode tool call or a student's network connection.
 
 From a computer with access to the teaching URL:
 
